@@ -2,13 +2,14 @@
 
 ## Build evidence
 
-41 automated unit/server-mock tests pass with zero failures, errors or skips. See `build-validation.log` and `target/surefire-reports`. Build environment: Windows 11 amd64, Eclipse Adoptium Java 21.0.12.1, Maven 3.9.9. Java target is release 21. API: Paper `1.21.11-R0.1-SNAPSHOT`, resolved snapshot `1.21.11-R0.1-20260511.115010-91`. Tests: JUnit Jupiter 6.0.3, MockBukkit 4.116.3, Surefire 3.5.4. Formatter: google-java-format 1.35.0. Runtime dependencies are Paper-provided; no shading or FAWE is needed.
+43 automated unit/server-mock tests pass with zero failures, errors or skips. See `target/surefire-reports`. Build environment: Windows 11 amd64, Eclipse Adoptium Java 21.0.12.1, Maven 3.9.9. Java target is release 21. API: Paper `1.21.11-R0.1-SNAPSHOT`, resolved snapshot `1.21.11-R0.1-20260511.115010-91`. Tests: JUnit Jupiter 6.0.3, MockBukkit 4.116.3, Surefire 3.5.4. Formatter: google-java-format 1.35.0. Runtime dependencies are Paper-provided; no shading or FAWE is needed.
 
-Verified Paper server: `paper-1.21.11-132.jar`, commit `c5eb079`, SHA-256 `5ffef465eeeb5f2a3c23a24419d97c51afd7dbb4923ff42df9a3f58bba1ccfba`. On September 9, 2026 the owner accepted the EULA, and the real Paper smoke test subsequently passed on Java 21. Plugin enable, small-region NBT restoration, fluids, entity cleanup and terrain-drop bounds are now tested. See [LIVE-TEST-REPORT.md](LIVE-TEST-REPORT.md). Real-player gameplay and loaded/full-size arena performance remain untested.
+Verified Paper server: `paper-1.21.11-132.jar`, commit `c5eb079`, SHA-256 `5ffef465eeeb5f2a3c23a24419d97c51afd7dbb4923ff42df9a3f58bba1ccfba`. On September 9, 2026 the owner accepted the EULA, and the real Paper smoke test subsequently passed on Java 21. Plugin enable, small-region NBT restoration, fluids, entity cleanup, terrain-drop bounds, and async gulag spawn chunk loading with temporary chunk tickets are now tested. See [LIVE-TEST-REPORT.md](LIVE-TEST-REPORT.md). Real-player teleports, gameplay and loaded/full-size arena performance remain untested.
 
 ## Automated coverage
 
 - World rotation excludes busy worlds and unavailable sites, never repeats a claimed site within an event, and continues from the previous cursor across events. Generated sites do not overlap. Host rekit on/off updates the saved setting; ordinary players cannot toggle it, and gulag players cannot obtain rekits even when enabled.
+- Gulag matches wait for both destination chunks before starting; a load failure returns players to the queue without dirtying the arena. The real Paper smoke runner checks async loading of both saved spawn chunks.
 
 - Simultaneous final deaths/shared ranks; pending gulag/return winner guards; single-use chances; disconnect forfeits; double gulag disconnect; cutoff; rekit cooldown/limits; duplicate loss idempotence; reopen state.
 - Ordered exactly-once time/player/host stages, delay/skip and invalid-stage handling.

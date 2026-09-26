@@ -203,13 +203,68 @@ public final class PaperSmoke extends JavaPlugin {
               "PASS: automatic main/gulag world creation, grass/deepslate/bedrock terrain, 50 saved"
                   + " spawns, two distinct test sites, backups, owned-world reload");
           cancel();
-          finish("PASS");
+          checkAsyncGulagChunks(gulag, setup);
         } catch (Throwable error) {
           cancel();
           fail(error);
         }
       }
     }.runTaskTimer(this, 20, 20);
+  }
+
+  void checkAsyncGulagChunks(World gulag, org.bukkit.configuration.file.YamlConfiguration setup) {
+    var sites = setup.getConfigurationSection("gulags");
+    var site = sites.getConfigurationSection(sites.getKeys(false).iterator().next());
+    Location a = site.getLocation("a"), b = site.getLocation("b");
+    require(
+        a != null && b != null && a.getWorld() == gulag && b.getWorld() == gulag,
+        "Saved gulag spawn locations");
+    Set<Chunk> held = new HashSet<>();
+    java.util.concurrent.atomic.AtomicBoolean finished =
+        new java.util.concurrent.atomic.AtomicBoolean();
+    java.util.concurrent.CompletableFuture.allOf(
+            gulag
+                .getChunkAtAsync(a.getBlockX() >> 4, a.getBlockZ() >> 4, true)
+                .thenAccept(
+                    chunk -> {
+                      if (!finished.get()
+                          && gulag.addPluginChunkTicket(chunk.getX(), chunk.getZ(), this))
+                        held.add(chunk);
+                    }),
+            gulag
+                .getChunkAtAsync(b.getBlockX() >> 4, b.getBlockZ() >> 4, true)
+                .thenAccept(
+                    chunk -> {
+                      if (!finished.get()
+                          && gulag.addPluginChunkTicket(chunk.getX(), chunk.getZ(), this))
+                        held.add(chunk);
+                    }))
+        .orTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+        .whenComplete(
+            (chunks, error) -> {
+              Runnable check =
+                  () -> {
+                    Throwable failure = null;
+                    try {
+                      require(error == null, "Async gulag chunk load: " + error);
+                      require(
+                          gulag.isChunkLoaded(a.getBlockX() >> 4, a.getBlockZ() >> 4)
+                              && gulag.isChunkLoaded(b.getBlockX() >> 4, b.getBlockZ() >> 4),
+                          "Gulag spawn chunks loaded");
+                      report.add("PASS: both gulag spawn chunks loaded asynchronously");
+                    } catch (Throwable errorDuringCheck) {
+                      failure = errorDuringCheck;
+                    } finally {
+                      finished.set(true);
+                      for (Chunk chunk : held)
+                        gulag.removePluginChunkTicket(chunk.getX(), chunk.getZ(), this);
+                    }
+                    if (failure == null) finish("PASS");
+                    else fail(failure);
+                  };
+              if (Bukkit.isPrimaryThread()) check.run();
+              else Bukkit.getScheduler().runTask(this, check);
+            });
   }
 
   void fail(Throwable error) {

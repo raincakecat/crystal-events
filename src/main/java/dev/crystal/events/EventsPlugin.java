@@ -5,6 +5,8 @@ import static dev.crystal.events.Tournament.State.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -61,6 +63,8 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
     final UUID a, b;
     final WorldBorder border;
     int left;
+    boolean ready;
+    final Set<Chunk> heldChunks = new HashSet<>();
 
     Match(GulagArena arena, UUID a, UUID b, WorldBorder border, int left) {
       this.arena = arena;
@@ -103,6 +107,7 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
   public void onDisable() {
     if (clock != null) clock.cancel();
     if (bar != null) bar.removeAll();
+    for (Match m : matches.values()) releaseGulagChunks(m);
     for (Player p : Bukkit.getOnlinePlayers()) if (backups != null && backups.exists(p)) restore(p);
     if (results != null) results.close();
   }
@@ -818,6 +823,7 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
 
   void endMatch(Match m) {
     matches.remove(m.arena.name);
+    releaseGulagChunks(m);
     for (UUID id : List.of(m.a, m.b)) {
       Player p = Bukkit.getPlayer(id);
       if (p != null && !p.isDead() && backups.exists(p)) {
@@ -825,12 +831,13 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
         if (game.entries.get(id).state == OUT) restore(p);
       }
     }
-    arenas.restore(
-        m.arena.name,
-        m.arena.region,
-        error -> {
-          if (error != null) announce("Gulag " + m.arena.name + " locked after reset failure");
-        });
+    if (arenas.dirty(m.arena.name))
+      arenas.restore(
+          m.arena.name,
+          m.arena.region,
+          error -> {
+            if (error != null) announce("Gulag " + m.arena.name + " locked after reset failure");
+          });
   }
 
   void returnPlayers() {
@@ -862,6 +869,7 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
 
   void gulagTick() {
     for (var m : new ArrayList<>(matches.values())) {
+      if (!m.ready) continue;
       m.left--;
       double min =
           Math.max(
@@ -912,11 +920,6 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
               unavailable);
       if (choice.isEmpty()) break;
       var g = gulags.get(choice.get().id());
-      if (!safe(g.a) || !safe(g.b)) {
-        announce("Gulag " + g.name + " has unsafe spawns; skipping");
-        rejected.add(g.name);
-        continue;
-      }
       var a = ready.get(0);
       var b = ready.get(1);
       WorldBorder gb = Bukkit.createWorldBorder();
@@ -932,26 +935,9 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
       } catch (IllegalStateException error) {
         getLogger().warning(error.getMessage());
       }
-      arenas.dirty(g.name, true);
       a.state = GULAG;
       b.state = GULAG;
-      for (UUID id : List.of(a.id, b.id)) {
-        Player p = Bukkit.getPlayer(id);
-        teleport(p, id.equals(a.id) ? g.a : g.b);
-        clean(p);
-        kits.give(p, getConfig().getBoolean("gulag.separate-kit"));
-        p.setGameMode(GameMode.SURVIVAL);
-        p.setWorldBorder(gb);
-        tell(
-            p,
-            "Gulag 1v1 in "
-                + g.region.world()
-                + " / "
-                + g.name
-                + ": "
-                + m.left
-                + "s. No rekitting. Draw eliminates both.");
-      }
+      prepareGulag(m);
     }
     for (var e : new ArrayList<>(game.queue()))
       if (game.seconds - e.queuedAt
@@ -961,6 +947,95 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
         if (p != null && !p.isDead()) restore(p);
         announce(e.name + " eliminated: gulag queue wait expired");
       }
+  }
+
+  void prepareGulag(Match m) {
+    // Paper completes successful chunk futures on the main thread. Tickets keep the
+    // first spawn chunk loaded while the second one finishes loading.
+    Location a = m.arena.a, b = m.arena.b;
+    CompletableFuture.allOf(
+            a.getWorld()
+                .getChunkAtAsync(a.getBlockX() >> 4, a.getBlockZ() >> 4, true)
+                .thenAccept(chunk -> holdGulagChunk(m, chunk)),
+            b.getWorld()
+                .getChunkAtAsync(b.getBlockX() >> 4, b.getBlockZ() >> 4, true)
+                .thenAccept(chunk -> holdGulagChunk(m, chunk)))
+        .orTimeout(10, TimeUnit.SECONDS)
+        .whenComplete(
+            (chunks, error) -> {
+              if (!isEnabled()) return;
+              if (Bukkit.isPrimaryThread()) finishGulagPreparation(m, error);
+              else Bukkit.getScheduler().runTask(this, () -> finishGulagPreparation(m, error));
+            });
+  }
+
+  void holdGulagChunk(Match m, Chunk chunk) {
+    if (matches.get(m.arena.name) == m
+        && chunk.getWorld().addPluginChunkTicket(chunk.getX(), chunk.getZ(), this))
+      m.heldChunks.add(chunk);
+  }
+
+  void releaseGulagChunks(Match m) {
+    for (Chunk chunk : m.heldChunks)
+      chunk.getWorld().removePluginChunkTicket(chunk.getX(), chunk.getZ(), this);
+    m.heldChunks.clear();
+  }
+
+  void finishGulagPreparation(Match m, Throwable error) {
+    try {
+      finishLoadedGulag(m, error);
+    } catch (Exception failure) {
+      getLogger().severe("Gulag " + m.arena.name + " start failed: " + failure.getMessage());
+      stop(true);
+    } finally {
+      releaseGulagChunks(m);
+    }
+  }
+
+  void finishLoadedGulag(Match m, Throwable error) {
+    if (matches.get(m.arena.name) != m || !running() || !game.gulagOpen) return;
+    Player a = Bukkit.getPlayer(m.a), b = Bukkit.getPlayer(m.b);
+    if (error != null
+        || a == null
+        || b == null
+        || a.isDead()
+        || b.isDead()
+        || game.entries.get(m.a) == null
+        || game.entries.get(m.b) == null
+        || game.entries.get(m.a).state != GULAG
+        || game.entries.get(m.b).state != GULAG
+        || !safe(m.arena.a)
+        || !safe(m.arena.b)) {
+      matches.remove(m.arena.name);
+      for (UUID id : List.of(m.a, m.b)) {
+        var entry = game.entries.get(id);
+        if (entry != null && entry.state == GULAG) entry.state = WAITING;
+      }
+      getLogger().warning("Gulag " + m.arena.name + " could not prepare; players remain queued");
+      return;
+    }
+    startPreparedGulag(m, a, b);
+  }
+
+  void startPreparedGulag(Match m, Player a, Player b) {
+    arenas.dirty(m.arena.name, true);
+    for (Player p : List.of(a, b)) {
+      teleport(p, p.getUniqueId().equals(m.a) ? m.arena.a : m.arena.b);
+      clean(p);
+      kits.give(p, getConfig().getBoolean("gulag.separate-kit"));
+      p.setGameMode(GameMode.SURVIVAL);
+      p.setWorldBorder(m.border);
+      tell(
+          p,
+          "Gulag 1v1 in "
+              + m.arena.region.world()
+              + " / "
+              + m.arena.name
+              + ": "
+              + m.left
+              + "s. No rekitting. Draw eliminates both.");
+    }
+    m.ready = true;
   }
 
   void saveRotation() {
@@ -1023,6 +1098,7 @@ public class EventsPlugin extends JavaPlugin implements Listener, CommandExecuto
     shrinkRate = 0;
     for (Player p : Bukkit.getOnlinePlayers()) if (entry(p) != null) restore(p);
     bar.removeAll();
+    for (Match m : matches.values()) releaseGulagChunks(m);
     matches.clear();
   }
 

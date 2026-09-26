@@ -1,5 +1,11 @@
 # Real Paper smoke tests
 
+## September 26, 2026 async gulag loading update
+
+**Result: PASS.** Java 21 rebuild: 43 automated tests, zero failures/errors/skips. The isolated Paper 1.21.11 build 132 smoke runner passed its existing snapshot/reset/drop and world checks plus a new check that asynchronously loads both saved gulag spawn chunks and holds them through the readiness check. Snapshot/reset/drop took 1.326 s, 1.342 s, and 0.794 s. The server had zero connected players, so cross-world client teleports and player-perceived lag are not measured here.
+
+Runtime JAR SHA-256: `4996C3C1979585AD08FE0B46408B12840456E51EF6E2455375AF45A13476F1B7`. Source JAR SHA-256: `2736E1F9AE45784E8DD75B9CFDB935CDB3C9CB39C43E48F91B95A8F162925A69`.
+
 ## September 26, 2026 verification
 
 **Result: PASS.** A fresh Java 21 build passed all 41 automated tests with no failures, errors, or skips. The rebuilt plugin and smoke runner then passed on the isolated Paper 1.21.11 build 132 server. Snapshot, reset, and terrain drop took 1.345 s, 1.344 s, and 0.804 s respectively for the 16,384-block synthetic region. The longest batches were 30.324 ms, 34.721 ms, and 3.475 ms. Automatic world setup and reload also passed. The server shut down cleanly. There were no connected players; the real-player and production-size checks below remain open.

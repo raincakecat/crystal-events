@@ -20,7 +20,7 @@ The plugin has no required runtime dependency. Arena snapshots use Paper's struc
 
 ## Host setup
 
-Automatic setup includes the main arena, 50 spawns, lobby, gulag sites and backups. Each gulag world runs one duel at a time and rotates through 32 different locations, with no location reused during an event. Winners revive in the main event world. Existing manual setups are preserved; the guide also explains manual selection and backups.
+Automatic setup includes the main arena, 50 spawns, lobby, gulag sites and backups. Each gulag world runs one duel at a time and rotates through 32 different locations, with no location reused during an event. Before a duel starts, both gulag spawn chunks load asynchronously and are held through the teleports. Winners revive in the main event world. Existing manual setups are preserved; the guide also explains manual selection and backups.
 
 Useful host commands include `/event worlds create|status|lobby`, `/event open`, `/event start`, `/event stop`, `/event gui`, `/event border <full-width> <seconds>`, `/event rekit on`, `/event rekit off`, `/event stage next|skip|delay <seconds>`, `/event drop deepslate|bedrock`, `/event reset`, and `/event results`. Gulag rekitting is always disabled, regardless of the main-event toggle.
 
@@ -32,7 +32,7 @@ Webhook posting is disabled by default. Set `discord.enabled: true` and a Discor
 
 ## Validation
 
-41 automated unit/server-mock tests pass, with no failures or skips. After the owner accepted the EULA, the plugin enabled and passed the real Paper 1.21.11 build 132 smoke test on Java 21. That test checks block/block-entity restoration, fluids, entity cleanup and bounded terrain drops. A 16,384-block, zero-player reset took about 1.34 seconds in the first successful run. Real-player gameplay and full-size loaded-server performance are still untested. See [LIVE-TEST-REPORT.md](LIVE-TEST-REPORT.md) and [VALIDATION.md](VALIDATION.md) for the scope and evidence.
+43 automated unit/server-mock tests pass, with no failures or skips. After the owner accepted the EULA, the plugin enabled and passed the real Paper 1.21.11 build 132 smoke test on Java 21. That test checks block/block-entity restoration, fluids, entity cleanup, bounded terrain drops, and async loading of both gulag spawn chunks. A 16,384-block, zero-player reset took about 1.34 seconds in the first successful run. Real-player gameplay and full-size loaded-server performance are still untested. See [LIVE-TEST-REPORT.md](LIVE-TEST-REPORT.md) and [VALIDATION.md](VALIDATION.md) for the scope and evidence.
 
 ## Build and deliverables
 

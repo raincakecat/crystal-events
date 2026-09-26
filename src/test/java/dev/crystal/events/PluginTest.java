@@ -317,4 +317,67 @@ class PluginTest {
     assertFalse(
         plugin.insideSquare(new Location(world, 6, 70, 0), new Location(null, 0, 0, 0), 10));
   }
+
+  @Test
+  void gulagStartsOnlyAfterBothSpawnChunksArePrepared() throws Exception {
+    var players = fightingPlayers();
+    plugin.kits.saveKit(host, false);
+    World duel = server.addSimpleWorld("duel");
+    duel.getBlockAt(8, 64, 8).setType(Material.STONE);
+    duel.getBlockAt(24, 64, 8).setType(Material.STONE);
+    var arena =
+        new EventsPlugin.GulagArena(
+            "duel1",
+            new Region("duel", 0, 60, 0, 31, 80, 31),
+            new Location(duel, 8.5, 65, 8.5),
+            new Location(duel, 24.5, 65, 8.5));
+    var match =
+        new EventsPlugin.Match(
+            arena,
+            players.get(0).getUniqueId(),
+            players.get(1).getUniqueId(),
+            duel.getWorldBorder(),
+            120);
+    plugin.matches.put(arena.name(), match);
+    for (var player : players.subList(0, 2)) {
+      plugin.game.entries.get(player.getUniqueId()).state = Tournament.State.GULAG;
+      plugin.waiting(player);
+    }
+    plugin.gulagTick();
+    assertEquals(120, match.left);
+    assertFalse(match.ready);
+    assertEquals(world, players.get(0).getWorld());
+    // MockBukkit does not implement Block.isPassable, so exercise the transition
+    // after the real server's spawn-safety check has completed.
+    plugin.startPreparedGulag(match, players.get(0), players.get(1));
+    assertTrue(match.ready);
+    assertEquals(duel, players.get(0).getWorld());
+    assertEquals(duel, players.get(1).getWorld());
+    assertTrue(plugin.arenas.dirty(arena.name()));
+  }
+
+  @Test
+  void failedGulagChunkPreparationKeepsPlayersQueued() throws Exception {
+    var players = fightingPlayers();
+    var arena =
+        new EventsPlugin.GulagArena(
+            "duel1",
+            new Region("world", 0, 60, 0, 31, 80, 31),
+            new Location(world, 8.5, 65, 8.5),
+            new Location(world, 24.5, 65, 8.5));
+    var match =
+        new EventsPlugin.Match(
+            arena,
+            players.get(0).getUniqueId(),
+            players.get(1).getUniqueId(),
+            world.getWorldBorder(),
+            120);
+    plugin.matches.put(arena.name(), match);
+    for (var player : players.subList(0, 2))
+      plugin.game.entries.get(player.getUniqueId()).state = Tournament.State.GULAG;
+    plugin.finishGulagPreparation(match, new IllegalStateException("chunk unavailable"));
+    assertFalse(plugin.matches.containsKey(arena.name()));
+    assertEquals(2, plugin.game.queue().size());
+    assertFalse(plugin.arenas.dirty(arena.name()));
+  }
 }
