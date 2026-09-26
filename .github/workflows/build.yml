@@ -1,0 +1,20 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Test and package plugin
+        run: mvn -B -ntp clean install
+      - name: Package isolated smoke runner
+        run: mvn -B -ntp -f integration/pom.xml package

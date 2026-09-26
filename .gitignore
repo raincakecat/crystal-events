@@ -1,0 +1,17 @@
+# Build products and local tooling
+/target/
+/integration/target/
+/dist/
+/tools/
+*.log
+
+# Local Paper servers contain generated worlds, player data, and server secrets.
+/practice-server/
+/integration/server/
+
+# Editor and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

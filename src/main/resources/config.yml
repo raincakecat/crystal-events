@@ -1,0 +1,52 @@
+# Width is the FULL side length of a square, in blocks, never radius.
+countdown-seconds: 20
+minimum-players: 2
+maximum-players: 50
+worlds:
+  # Fresh installations only. Existing manually configured arenas are preserved.
+  auto-create: true
+  # Each gulag world runs ONE duel at a time; different worlds can fight simultaneously.
+  gulag-worlds: 2
+  # Distinct 32x32 sites, 128 blocks apart. Each site used once per tournament.
+  locations-per-world: 32
+rekit:
+  enabled: true
+  cooldown-seconds: 30
+  # 0 = unlimited requests; initial kit and gulag revival do not count.
+  per-player-limit: 0
+gulag:
+  enabled: true
+  chances: 1
+  match-seconds: 120
+  unmatched-seconds: 1800
+  final-width: 5
+  protection-seconds: 5
+  separate-kit: false
+arena:
+  # Limits bound synchronous work; measure on your server before increasing.
+  # Default supports e.g. 128 x 128 x 192. Hard safety ceiling is 16,000,000.
+  max-blocks: 4000000
+  cube-size: 8
+  # Global budget shared across all arena jobs; 1..8. One cube is 512 blocks by default.
+  cubes-per-tick: 1
+  drop-blocks-per-tick: 1000
+  drop-warning-seconds: 10
+  deepslate-y: 0
+  bedrock-y: -60
+border:
+  final-width: 10
+  shrink-seconds: 300
+discord:
+  enabled: false
+  webhook-url: ''
+  timeout-seconds: 10
+# Ordered stages. Time is seconds since fighting starts. Players includes pending revivals.
+# Triggers: time, players, host. Actions: announce, shrink, rekit-off, gulag-close,
+# deepslate-drop, bedrock-finale. Host stages wait for /event stage next.
+timeline:
+  - {name: Fighting, trigger: time, value: 0, action: announce}
+  - {name: Shrink, trigger: time, value: 120, action: shrink}
+  - {name: Rekit off, trigger: time, value: 300, action: rekit-off}
+  - {name: Gulag close, trigger: time, value: 420, action: gulag-close}
+  - {name: Deepslate drop, trigger: host, value: 0, action: deepslate-drop}
+  - {name: Bedrock finale, trigger: host, value: 0, action: bedrock-finale}

@@ -1,0 +1,6 @@
+name: CrystalPvPSmoke
+version: 1.0.0
+main: dev.crystal.smoke.PaperSmoke
+api-version: '1.21.11'
+depend: [CrystalPvPEvents]
+description: Isolated test runner; never install on a production server

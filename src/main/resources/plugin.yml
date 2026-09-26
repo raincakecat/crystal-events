@@ -1,0 +1,15 @@
+name: CrystalPvPEvents
+version: 1.0.0
+main: dev.crystal.events.EventsPlugin
+api-version: '1.21.11'
+description: Bounded CrystalPvP events with reusable gulags and arena snapshots
+author: CrystalPvPEvents
+commands:
+  event:
+    description: CrystalPvP event commands
+    usage: /event help
+    aliases: [cpvpevent]
+permissions:
+  crystal.host:
+    description: Configure and operate events
+    default: op
