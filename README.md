@@ -4,7 +4,7 @@ Original Paper 1.21.11 / Java 21 Crystal PvP tournament plugin. Install `jar/Cry
 
 ## Start here
 
-Read **[GETTING-STARTED.md](GETTING-STARTED.md)** for a complete first-run guide: installation, a worked practice-arena example, saving the kit/spawns/gulag, running a tournament, trying every major feature, troubleshooting, and arranging gameplay/performance testing with Codex. It distinguishes this build folder from your actual Minecraft server folder.
+Read **[GETTING-STARTED.md](GETTING-STARTED.md)** for a complete first-run guide: installation, a worked practice-arena example, saving the kit/spawns/gulag, running a tournament, trying every major feature, troubleshooting, and planning gameplay and performance tests. It distinguishes this build folder from your actual Minecraft server folder.
 
 Then use [ADMIN.md](ADMIN.md) as the command reference and [VALIDATION.md](VALIDATION.md) for the exact tested scope. Do not install the separate `CrystalPvPSmoke` test runner on your normal tournament server.
 

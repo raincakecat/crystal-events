@@ -1,6 +1,6 @@
 # CrystalPvPEvents: installation and first tournament
 
-This guide takes you from the downloaded plugin to a practice tournament, then explains how to test it with Codex. Read this first; use [ADMIN.md](ADMIN.md) for the complete command reference and [VALIDATION.md](VALIDATION.md) for test evidence and limitations.
+This guide takes you from the downloaded plugin to a practice tournament, then explains how to test gameplay and performance. Read this first; use [ADMIN.md](ADMIN.md) for the complete command reference and [VALIDATION.md](VALIDATION.md) for test evidence and limitations.
 
 ## 1. Understand the folders
 
@@ -37,7 +37,7 @@ Use **Minecraft Java Edition 1.21.11**, **Paper 1.21.11**, and **Java 21**. This
 
 Hosts need `crystal.host`. Operators have it by default. In the server console, `op YourMinecraftName` grants operator status; console commands do not use a leading slash. Give operator access only to trusted hosts. Regular players can join without operator access.
 
-If you do not already have a normal Paper server, ask Codex to set up a **separate local practice server**. Supply the folder you want to use. The integration server is designed for automated checks rather than interactive hosting.
+If you do not already have a normal Paper server, set up a **separate local practice server** in its own folder. The integration server is designed for automated checks rather than interactive hosting.
 
 ## 3. Automatic worlds: recommended first-event setup
 
@@ -203,18 +203,18 @@ If the server crashes, pending original-player backups recover when players join
 
 Use `/event reload` to reload this plugin's config while idle. Avoid the server-wide `/reload` command. To replace the JAR, stop the server and restart after copying the new version.
 
-## 10. How to ask Codex for gameplay and performance testing
+## 10. Gameplay and performance testing
 
 You have accepted the EULA, so the isolated Paper smoke runner can now run. That checks real structure backup/restoration and terrain clearing; it does not replace client gameplay or loaded-server testing.
 
-For guided gameplay testing, say:
+Use this template to brief the person running the gameplay test.
 
 > Set up a separate local practice server for CrystalPvPEvents. Use [folder path]. I will join with [number] Minecraft Java 1.21.11 players. Prepare the test arena, guide us through registration, layouts, rekit, gulag, borders, drops and resets, inspect the logs, and fix failures.
 
-Keep the PC on and the server running during the session. Tell Codex which server folder is safe to use, whether it is a copy or live server, which other plugins are installed, and how many players will join. Codex can inspect logs/configs, operate an accessible console, run automation and measure results. Human players can verify combat feel, client UI and visual behavior. Test clients may automate selected scenarios where feasible; that requires a defined player-count/scenario plan and still does not establish human gameplay quality. Share access through available tools rather than posting account passwords or tokens.
+Keep the PC on and the server running during the session. Record the server folder, whether it is a staging copy or a live server, which plugins are installed, and how many players will join. The test operator can inspect logs and configuration, run console commands, and record measurements. Human players can verify combat feel, client UI and visual behavior. Test clients may automate selected scenarios where feasible; that requires a defined player-count/scenario plan and still does not establish human gameplay quality. Share access through available tools rather than posting account passwords or tokens.
 
-For performance testing, say:
+Use this template to define the performance test.
 
 > Benchmark CrystalPvPEvents on my staging server in [folder]. Use a [width × depth × height] arena and target [player count] players. Measure idle and combat TPS/MSPT, backup/reset/drop duration, worst batch time, CPU and memory. Test with these other plugins: [list]. Save a report and fix regressions. Do not modify my live server.
 
-Useful measurements include a quiet-server baseline, active combat, simultaneous gulag resets, main reset and both drops. Run multiple trials and record hardware, JVM settings, world size and player count. A tiny zero-player smoke test is only a functional baseline. It cannot support a claim that a full-size 50- or 100-player tournament will be lag-free. Give Codex the actual map or a staging copy and the intended player count to make the performance result relevant.
+Useful measurements include a quiet-server baseline, active combat, simultaneous gulag resets, main reset and both drops. Run multiple trials and record hardware, JVM settings, world size and player count. A tiny zero-player smoke test is only a functional baseline. It cannot support a claim that a full-size 50- or 100-player tournament will be lag-free. Use the actual map or a staging copy and the intended player count for representative results.

@@ -79,4 +79,4 @@ This run measured the synthetic 16,384-block snapshot at 1.371 seconds (maximum 
 
 ## Still needed before a production tournament
 
-Real clients must exercise combat, GUI/sidebar appearance, gulag returns, simultaneous deaths, disconnect/rejoin and kit protection under the intended plugin stack. Performance work needs the actual arena dimensions/map, target player count and staging-server folder. Measure baseline, combat, multiple gulag resets, full main reset and both drops over repeated trials. See GETTING-STARTED.md section 10 for ready-to-use requests to arrange those sessions with Codex.
+Real clients must exercise combat, GUI/sidebar appearance, gulag returns, simultaneous deaths, disconnect/rejoin and kit protection under the intended plugin stack. Performance work needs the actual arena dimensions/map, target player count and staging-server folder. Measure baseline, combat, multiple gulag resets, full main reset and both drops over repeated trials. See GETTING-STARTED.md section 10 for templates to plan both test sessions.
